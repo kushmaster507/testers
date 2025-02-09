@@ -1,0 +1,37 @@
+name: Fetch and Convert EPG
+
+on:
+  schedule:
+    - cron: "0 0,12 * * *" # Runs at 00:00 and 12:00 UTC daily
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  fetch_and_convert:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Run Python script
+        run: python epg_to_json.py
+
+      - name: Commit and push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add epg_ripper_US1.json
+          git commit --amend -m "Update EPG JSON" || echo "No changes to commit"
+          git push --force
